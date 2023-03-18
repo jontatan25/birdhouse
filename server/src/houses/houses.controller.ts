@@ -15,8 +15,9 @@ export class HousesController {
   }
 
   @Patch(':id')
-  updateHouse(@Param('id') id: string, @Body() updateHouseDto:UpdateHouseDto, @Res() res) {
-    const updateHouseResult = this.housesService.updateHouse(id, updateHouseDto);
+  //id Changed to ntype number to test transformation, param also modified
+  updateHouse(@Param('id') id: number, @Body() updateHouseDto:UpdateHouseDto, @Res() res) {
+    const updateHouseResult = this.housesService.updateHouse(''+id, updateHouseDto);
     return res.status(201).json(updateHouseResult);
   }
 
