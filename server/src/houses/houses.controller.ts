@@ -3,7 +3,7 @@ import { HousesService } from 'src/houses/houses.service';
 import { v4 as uuidv4 } from 'uuid';
 
 @Controller('house')
-export class BirdhouseController {
+export class HousesController {
   constructor(private readonly housesService: HousesService) {}
 
   @Post()

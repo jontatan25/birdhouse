@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { House } from './entities/house.entity';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -44,6 +44,10 @@ export class HousesService {
     return 'UpdatedResidency' + ' ' + id + ' ' + eggs;
   }
   getHouseById(id: string) {
-    return 'GetHouse' + ' ' + id;
+    const house = this.houses.find(house => house.id === id);
+    if (!house) {
+        throw new NotFoundException(`House ${id} not found`);
+    } 
+    return house
   }
 }
