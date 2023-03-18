@@ -1,25 +1,30 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { House } from './entities/house.entity';
 import { v4 as uuidv4 } from 'uuid';
 import { CreateHouseDto } from './dto/create-house.dto';
 import { UpdateHouseDto } from './dto/update-house.dto';
 import { UpdateResidencyDto } from './dto/update-residency.dto';
+import { InjectRepository } from '@nestjs/typeorm/dist';
+import { Repository } from 'typeorm';
+import { isUUID } from 'class-validator';
 
 @Injectable()
 export class HousesService {
-  private houses: House[] = [
-    {
-      id: 'ddeaadfa-28a2-4d4b-91a6-2a10e70b5498',
-      ubid: 'a9097068-06ea-47bf-a3de-bd1272e2f6b8',
-      birds: 0,
-      eggs: 0,
-      longitude: 123.456,
-      latitude: 78.9,
-      name: 'Example Birdhouse',
-    },
-  ];
-  registerNewHouse(body:CreateHouseDto) {
-    const { longitude, latitude, name } = body;
+  constructor(
+    @InjectRepository(House)
+    private readonly houseRepository: Repository<House>,
+  ) {}
+
+  async findAll(): Promise<House[]> {
+    return this.houseRepository.find();
+  }
+
+  registerNewHouse(createHouseDto: CreateHouseDto) {
+    const { longitude, latitude, name } = createHouseDto;
     const id = uuidv4();
     const ubid = uuidv4();
 
@@ -32,25 +37,55 @@ export class HousesService {
       latitude,
       name,
     };
-    this.houses.push(newBirdhouse);
-    return newBirdhouse;
+    //creating instance of createHouseDto
+    const house = this.houseRepository.create(newBirdhouse);
+    return this.houseRepository.save(house);
   }
 
-  updateHouse(id: string, body:UpdateHouseDto) {
-    const { longitude, latitude, name } = body;
-    return (
-      'UpdatedHouse' + ' ' + id + ' ' + longitude + ' ' + latitude + ' ' + name
-    );
+  async updateHouse(id: string, updateHouseDto: UpdateHouseDto) {
+    if (!isUUID(id)) {
+      throw new BadRequestException('Invalid id format');
+    }
+
+    try {
+      //creating new entity based on the object passes\
+      const house = await this.houseRepository.preload({
+        id: id,
+        ...updateHouseDto,
+      });
+
+      if (!house) {
+        throw new NotFoundException(`house # ${id} not found`);
+      }
+      return this.houseRepository.save(house);
+    } catch (error) {
+      console.log(error);
+    }
   }
-  updateResidency(id: string, body:UpdateResidencyDto) {
+
+  updateResidency(id: string, body: UpdateResidencyDto) {
     const { eggs } = body;
     return 'UpdatedResidency' + ' ' + id + ' ' + eggs;
   }
-  getHouseById(id: string) {
-    const house = this.houses.find(house => house.id === id);
+
+  async getHouseById(id: string) {
+    if (!isUUID(id)) {
+      throw new BadRequestException('Invalid id format');
+    }
+
+    const house = await this.houseRepository.findOne({
+      where: { id: id },
+    });
+
     if (!house) {
-        throw new NotFoundException(`House ${id} not found`);
-    } 
-    return house
+      throw new NotFoundException(`house # ${id} not found`);
+    }
+
+    return house;
+  }
+
+  async remove(id: string) {
+    const coffee = await this.getHouseById(id);
+    return this.houseRepository.remove(coffee);
   }
 }
