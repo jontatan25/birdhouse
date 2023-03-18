@@ -15,7 +15,8 @@ export class HousesService {
       name: 'Example Birdhouse',
     },
   ];
-  registerNewHouse(longitude: number, latitude: number, name: string) {
+  registerNewHouse(body) {
+    const { longitude, latitude, name } = body;
     const id = uuidv4();
     const ubid = uuidv4();
 
@@ -29,5 +30,20 @@ export class HousesService {
       name,
     };
     this.houses.push(newBirdhouse);
+    return newBirdhouse;
+  }
+
+  updateHouse(id: string, body) {
+    const { longitude, latitude, name } = body;
+    return (
+      'UpdatedHouse' + ' ' + id + ' ' + longitude + ' ' + latitude + ' ' + name
+    );
+  }
+  updateResidency(id: string, body) {
+    const { eggs } = body;
+    return 'UpdatedResidency' + ' ' + id + ' ' + eggs;
+  }
+  getHouseById(id: string) {
+    return 'GetHouse' + ' ' + id;
   }
 }

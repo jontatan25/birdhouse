@@ -8,24 +8,26 @@ export class BirdhouseController {
 
   @Post()
   registerNewBirdhouse(@Body() body, @Res() res) {
-    const { longitude, latitude, name } = body;
-    return this.housesService.registerNewHouse(longitude, latitude, name);
+    const registerResult = this.housesService.registerNewHouse(body);
+    return res.status(201).json(registerResult);
   }
 
   @Patch(':id')
-  updateHouse(@Param('id') id: string, @Body() body) {
-    return 'Updating ' + id + '';
+  updateHouse(@Param('id') id: string, @Body() body, @Res() res) {
+    const updateHouseResult = this.housesService.updateHouse(id, body);
+    return res.status(201).json(updateHouseResult);
   }
 
   @Post(':id/residency')
   updateResidency(@Param('id') id: string, @Body() body, @Res() res) {
-    const newBirdhouse = 'Updating residency' + id;
+    const updateResidencyResult = this.housesService.updateResidency(id, body);
 
-    return res.status(201).json(newBirdhouse);
+    return res.status(201).json(updateResidencyResult);
   }
 
   @Get(':id')
-  getHouse(@Param('id') id: string) {
-    return 'GET REQUEST' + id;
+  getHouse(@Param('id') id: string, @Res() res) {
+    const getHouseById = this.housesService.getHouseById(id);
+    return res.status(201).json(getHouseById);
   }
 }
