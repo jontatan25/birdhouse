@@ -1,6 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { House } from './entities/house.entity';
 import { v4 as uuidv4 } from 'uuid';
+import { CreateHouseDto } from './dto/create-house.dto';
+import { UpdateHouseDto } from './dto/update-house.dto';
+import { UpdateResidencyDto } from './dto/update-residency.dto';
 
 @Injectable()
 export class HousesService {
@@ -15,7 +18,7 @@ export class HousesService {
       name: 'Example Birdhouse',
     },
   ];
-  registerNewHouse(body) {
+  registerNewHouse(body:CreateHouseDto) {
     const { longitude, latitude, name } = body;
     const id = uuidv4();
     const ubid = uuidv4();
@@ -33,13 +36,13 @@ export class HousesService {
     return newBirdhouse;
   }
 
-  updateHouse(id: string, body) {
+  updateHouse(id: string, body:UpdateHouseDto) {
     const { longitude, latitude, name } = body;
     return (
       'UpdatedHouse' + ' ' + id + ' ' + longitude + ' ' + latitude + ' ' + name
     );
   }
-  updateResidency(id: string, body) {
+  updateResidency(id: string, body:UpdateResidencyDto) {
     const { eggs } = body;
     return 'UpdatedResidency' + ' ' + id + ' ' + eggs;
   }
