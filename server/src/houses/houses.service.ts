@@ -51,6 +51,21 @@ export class HousesService {
     }
   }
 
+  async getHouseByUbid(ubid: string): Promise<any> {
+    if (!isUUID(ubid)) {
+      throw new BadRequestException('Invalid id format');
+    }
+
+    const house = await this.houseRepository.findOne({
+      where: { ubid: ubid },
+      relations: ['residences'],
+    });
+    if (!house) {
+      return house;
+    } else {
+      return true;
+    }
+  }
   registerNewHouse(createHouseDto: CreateHouseDto): Promise<House> {
     const { longitude, latitude, name } = createHouseDto;
     const id = uuidv4();
@@ -96,9 +111,9 @@ export class HousesService {
       };
 
       // log the update event in the API
-      console.log(`EVENT: House Updated.`)
-      console.log(res)
-      return res
+      console.log(`EVENT: House Updated.`);
+      console.log(res);
+      return res;
     } catch (error) {
       console.log(error);
     }
@@ -136,10 +151,9 @@ export class HousesService {
       };
 
       // log the update event in the API
-      console.log(`EVENT: Residency Updated.`)
-      console.log(res)
-      return res
-      
+      console.log(`EVENT: Residency Updated.`);
+      console.log(res);
+      return res;
     } catch (err) {
       console.log(err);
     }
