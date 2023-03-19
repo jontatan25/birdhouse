@@ -13,6 +13,7 @@ import { HousesService } from 'src/houses/houses.service';
 import { CreateHouseDto } from './dto/create-house.dto';
 import { UpdateHouseDto } from './dto/update-house.dto';
 import { UpdateResidencyDto } from './dto/update-residency.dto';
+import { House } from './entities/house.entity';
 
 @Controller('house')
 export class HousesController {
@@ -58,4 +59,17 @@ export class HousesController {
       }
     }
   }
+
+  @Post('admin/register')
+  async registerHousesByUbid(@Body() body: { ubids: string[] },@Res() res): Promise<House[]> {
+    try {
+      const houses = await this.housesService.registerHouseByUbid(body.ubids);
+      return res.status(201).json({
+        message: 'Houses Registered',
+        data: houses,
+      });
+    } catch (error) {
+      return res.status(400).json({ message: error.message });
+    }
+}
 }

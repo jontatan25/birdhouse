@@ -51,21 +51,6 @@ export class HousesService {
     }
   }
 
-  async getHouseByUbid(ubid: string): Promise<any> {
-    if (!isUUID(ubid)) {
-      throw new BadRequestException('Invalid id format');
-    }
-
-    const house = await this.houseRepository.findOne({
-      where: { ubid: ubid },
-      relations: ['residences'],
-    });
-    if (!house) {
-      return house;
-    } else {
-      return true;
-    }
-  }
   registerNewHouse(createHouseDto: CreateHouseDto): Promise<House> {
     const { longitude, latitude, name } = createHouseDto;
     const id = uuidv4();
@@ -157,6 +142,53 @@ export class HousesService {
     } catch (err) {
       console.log(err);
     }
+  }
+
+  async getHouseByUbid(ubid: string): Promise<any> {
+    if (!isUUID(ubid)) {
+      throw new BadRequestException('Invalid id format');
+    }
+
+    const house = await this.houseRepository.findOne({
+      where: { ubid: ubid },
+      relations: ['residences'],
+    });
+    if (!house) {
+      return house;
+    } else {
+      return true;
+    }
+  }
+
+  async registerHouseByUbid(ubids: string[]): Promise<House[]> {
+    const houses: House[] = [];
+
+    for (const ubid of ubids) {
+      if (!isUUID(ubid)) {
+        throw new BadRequestException('Invalid id format');
+      }
+      //test for duplicate houses
+      const existingHouse = await this.getHouseByUbid(ubid);
+      if (existingHouse) {
+        houses.push(existingHouse);
+      } else {
+        const house = new House();
+        const id = uuidv4();
+        //creating a default house
+        house.ubid = ubid;
+        house.id = id;
+        house.birds = 0;
+        house.eggs = 0;
+        house.birds = 0;
+        house.longitude = 0;
+        house.latitude = 0;
+        house.name = "new House"
+        
+        houses.push(await this.houseRepository.save(house));
+      }
+    }
+
+    return houses;
   }
 
   // async remove(id: string) {
