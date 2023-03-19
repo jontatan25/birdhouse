@@ -27,7 +27,10 @@ export class HousesService {
     return this.houseRepository.find({ relations: ['residences'] });
   }
 
-  async getHouseById(id: string) {
+  async getHouseById(
+    id: string,
+    includeAllInfo: boolean = false,
+  ): Promise<any> {
     if (!isUUID(id)) {
       throw new BadRequestException('Invalid id format');
     }
@@ -40,10 +43,15 @@ export class HousesService {
     if (!house) {
       throw new NotFoundException(`house # ${id} not found`);
     }
-    return plainToClass(House, house); // transform to plain object without circular references
+    if (includeAllInfo) {
+      return plainToClass(House, house); // transform to plain object without circular references
+    } else {
+      const { birds, eggs, longitude, latitude, name } = house;
+      return { birds, eggs, longitude, latitude, name };
+    }
   }
 
-  registerNewHouse(createHouseDto: CreateHouseDto) {
+  registerNewHouse(createHouseDto: CreateHouseDto): Promise<House> {
     const { longitude, latitude, name } = createHouseDto;
     const id = uuidv4();
     const ubid = uuidv4();
@@ -62,13 +70,13 @@ export class HousesService {
     return this.houseRepository.save(house);
   }
 
-  async updateHouse(id: string, updateHouseDto: UpdateHouseDto) {
+  async updateHouse(id: string, updateHouseDto: UpdateHouseDto): Promise<any> {
     if (!isUUID(id)) {
       throw new BadRequestException('Invalid id format');
     }
 
     try {
-      //creating new entity based on the object passes\
+      //creating new entity based on the object passed
       const house = await this.houseRepository.preload({
         id: id,
         ...updateHouseDto,
@@ -77,7 +85,20 @@ export class HousesService {
       if (!house) {
         throw new NotFoundException(`house # ${id} not found`);
       }
-      return this.houseRepository.save(house);
+      const updatedHouse = await this.houseRepository.save(house);
+
+      const res = {
+        birds: updatedHouse.birds,
+        eggs: updatedHouse.eggs,
+        longitude: updatedHouse.longitude,
+        latitude: updatedHouse.latitude,
+        name: updatedHouse.name,
+      };
+
+      // log the update event in the API
+      console.log(`EVENT: House Updated.`)
+      console.log(res)
+      return res
     } catch (error) {
       console.log(error);
     }
@@ -93,7 +114,7 @@ export class HousesService {
     latitude: number;
     name: string;
   }> {
-    const house = await this.getHouseById(id);
+    const house = await this.getHouseById(id, true);
 
     const newResidency = new Residency();
     newResidency.birds = residencyDto.birds;
@@ -106,15 +127,26 @@ export class HousesService {
     try {
       await this.residencyRepository.save(newResidency);
       const updatedHouse = await this.houseRepository.save(house);
-      const { birds, eggs, longitude, latitude, name } = updatedHouse;
-      return { birds, eggs, longitude, latitude, name };
+      const res = {
+        birds: updatedHouse.birds,
+        eggs: updatedHouse.eggs,
+        longitude: updatedHouse.longitude,
+        latitude: updatedHouse.latitude,
+        name: updatedHouse.name,
+      };
+
+      // log the update event in the API
+      console.log(`EVENT: Residency Updated.`)
+      console.log(res)
+      return res
+      
     } catch (err) {
       console.log(err);
     }
   }
 
-  async remove(id: string) {
-    const coffee = await this.getHouseById(id);
-    return this.houseRepository.remove(coffee);
-  }
+  // async remove(id: string) {
+  //   const coffee = await this.getHouseById(id);
+  //   return this.houseRepository.remove(coffee);
+  // }
 }

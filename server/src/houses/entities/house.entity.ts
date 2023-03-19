@@ -1,3 +1,4 @@
+import { Length } from 'class-validator';
 import {
   Column,
   Entity,
@@ -28,6 +29,7 @@ export class House {
   latitude: number;
 
   @Column('text')
+  @Length(4, 16)
   name: string;
 
   @JoinTable()
