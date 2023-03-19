@@ -1,5 +1,10 @@
-import { IsNumber } from 'class-validator';
+import { IsDate, IsNumber } from 'class-validator';
+import { PrimaryGeneratedColumn } from 'typeorm';
 export class UpdateResidencyDto {
-    @IsNumber()
-    eggs: number;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+  @IsNumber()
+  eggs: number;
+  @IsNumber()
+  birds: number;
 }

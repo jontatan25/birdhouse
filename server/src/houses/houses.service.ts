@@ -11,16 +11,36 @@ import { UpdateResidencyDto } from './dto/update-residency.dto';
 import { InjectRepository } from '@nestjs/typeorm/dist';
 import { Repository } from 'typeorm';
 import { isUUID } from 'class-validator';
+import { Residency } from './entities/residency.entity';
+import { plainToClass } from 'class-transformer';
 
 @Injectable()
 export class HousesService {
   constructor(
     @InjectRepository(House)
     private readonly houseRepository: Repository<House>,
+    @InjectRepository(Residency)
+    private readonly residencyRepository: Repository<Residency>,
   ) {}
 
   async findAll(): Promise<House[]> {
-    return this.houseRepository.find();
+    return this.houseRepository.find({ relations: ['residences'] });
+  }
+
+  async getHouseById(id: string) {
+    if (!isUUID(id)) {
+      throw new BadRequestException('Invalid id format');
+    }
+
+    const house = await this.houseRepository.findOne({
+      where: { id: id },
+      relations: ['residences'],
+    });
+
+    if (!house) {
+      throw new NotFoundException(`house # ${id} not found`);
+    }
+    return plainToClass(House, house); // transform to plain object without circular references
   }
 
   registerNewHouse(createHouseDto: CreateHouseDto) {
@@ -63,25 +83,34 @@ export class HousesService {
     }
   }
 
-  updateResidency(id: string, body: UpdateResidencyDto) {
-    const { eggs } = body;
-    return 'UpdatedResidency' + ' ' + id + ' ' + eggs;
-  }
+  async updateResidency(
+    id: string,
+    residencyDto: UpdateResidencyDto,
+  ): Promise<{
+    birds: number;
+    eggs: number;
+    longitude: number;
+    latitude: number;
+    name: string;
+  }> {
+    const house = await this.getHouseById(id);
 
-  async getHouseById(id: string) {
-    if (!isUUID(id)) {
-      throw new BadRequestException('Invalid id format');
+    const newResidency = new Residency();
+    newResidency.birds = residencyDto.birds;
+    newResidency.eggs = residencyDto.eggs;
+    newResidency.date = new Date();
+    newResidency.house = house;
+
+    house.residences.push(newResidency);
+
+    try {
+      await this.residencyRepository.save(newResidency);
+      const updatedHouse = await this.houseRepository.save(house);
+      const { birds, eggs, longitude, latitude, name } = updatedHouse;
+      return { birds, eggs, longitude, latitude, name };
+    } catch (err) {
+      console.log(err);
     }
-
-    const house = await this.houseRepository.findOne({
-      where: { id: id },
-    });
-
-    if (!house) {
-      throw new NotFoundException(`house # ${id} not found`);
-    }
-
-    return house;
   }
 
   async remove(id: string) {

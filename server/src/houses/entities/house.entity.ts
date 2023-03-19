@@ -1,4 +1,11 @@
-import { Column, Entity, PrimaryGeneratedColumn  } from "typeorm";
+import {
+  Column,
+  Entity,
+  PrimaryGeneratedColumn,
+  JoinTable,
+  OneToMany,
+} from 'typeorm';
+import { Residency } from './residency.entity';
 
 @Entity()
 export class House {
@@ -14,12 +21,16 @@ export class House {
   @Column("int")
   eggs: number;
 
-  @Column("decimal", { precision: 9, scale: 6 })
+  @Column('decimal', { precision: 9, scale: 6 })
   longitude: number;
 
-  @Column("decimal", { precision: 9, scale: 6 })
+  @Column('decimal', { precision: 9, scale: 6 })
   latitude: number;
 
-  @Column("text")
+  @Column('text')
   name: string;
+
+  @JoinTable()
+  @OneToMany((type) => Residency, (residency) => residency.house)
+  residences: Residency[];
 }

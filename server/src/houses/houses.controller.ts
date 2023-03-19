@@ -39,14 +39,8 @@ export class HousesController {
   updateResidency(
     @Param('id') id: string,
     @Body() updateResidencyDto: UpdateResidencyDto,
-    @Res() res,
   ) {
-    const updateResidencyResult = this.housesService.updateResidency(
-      id,
-      updateResidencyDto,
-    );
-
-    return res.status(201).json(updateResidencyResult);
+    return this.housesService.updateResidency(id, updateResidencyDto);
   }
 
   @Get(':id')
@@ -58,6 +52,8 @@ export class HousesController {
       if (error instanceof NotFoundException) {
         return res.status(404).json({ message: error.message });
       } else if (error instanceof BadRequestException) {
+        return res.status(400).json({ message: error.message });
+      } else if (error) {
         return res.status(400).json({ message: error.message });
       }
     }
