@@ -71,5 +71,16 @@ export class HousesController {
     } catch (error) {
       return res.status(400).json({ message: error.message });
     }
+  }
+
+  @Post('admin/prune')
+async pruneHouses(@Res() res): Promise<Response> {
+  try {
+    const result = await this.housesService.pruneHouses();
+    return res.status(200).json(result);
+  } catch (error) {
+    return res.status(500).json({ message: 'Failed to prune houses' });
+  }
 }
+
 }

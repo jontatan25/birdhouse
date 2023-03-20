@@ -56,6 +56,11 @@ export class HousesService {
     const id = uuidv4();
     const ubid = uuidv4();
 
+    const creationTime = new Date();
+
+    // TO CREATE A HOUSE OLDER THAN ONE YEAR
+    // const oneYearOneDayAgo = new Date(Date.now() - 366 * 24 * 60 * 60 * 1000);
+
     const newBirdhouse = {
       id,
       ubid,
@@ -64,6 +69,7 @@ export class HousesService {
       longitude,
       latitude,
       name,
+      updatedAt: creationTime,
     };
     //creating instance of createHouseDto
     const house = this.houseRepository.create(newBirdhouse);
@@ -91,6 +97,8 @@ export class HousesService {
       if (!house) {
         throw new NotFoundException(`house # ${id} not found`);
       }
+
+      const updateTime = new Date();
       const updatedHouse = await this.houseRepository.save(house);
 
       const res = {
@@ -99,6 +107,7 @@ export class HousesService {
         longitude: updatedHouse.longitude,
         latitude: updatedHouse.latitude,
         name: updatedHouse.name,
+        updatedAt: updateTime,
       };
 
       // log the update event in the API
@@ -132,9 +141,11 @@ export class HousesService {
 
     house.residences.push(newResidency);
 
+    const updateTime = new Date();
     //updating house values
     house.birds = residencyDto.birds;
     house.eggs = residencyDto.eggs;
+    house.updatedAt = updateTime;
 
     try {
       await this.residencyRepository.save(newResidency);
@@ -197,6 +208,7 @@ export class HousesService {
         house.longitude = 0;
         house.latitude = 0;
         house.name = 'new House';
+        house.updatedAt = new Date();
 
         // log the update event in the API
         console.log('EVENT: House Created.');
@@ -207,6 +219,26 @@ export class HousesService {
     }
 
     return houses;
+  }
+
+  async pruneHouses(): Promise<{ message: string }> {
+    const oneYearAgo = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000);
+    const oldHouses = await this.houseRepository
+      .createQueryBuilder('house')
+      .where('house.updatedAt <= :oneYearAgo', { oneYearAgo })
+      .getMany();
+
+    if (oldHouses.length === 0) {
+      return { message: 'No houses to prune.' };
+    }
+
+    for (const house of oldHouses) {
+      await this.houseRepository.remove(house);
+    }
+
+    console.log(`Pruned ${oldHouses.length} houses.`);
+    console.table(oldHouses);
+    return { message: `Pruned ${oldHouses.length} houses.` };
   }
 
   // async remove(id: string) {

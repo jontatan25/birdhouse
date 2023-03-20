@@ -19,6 +19,8 @@ export class HousesModule implements NestModule {
       .forRoutes(
         { path: 'house/:id', method: RequestMethod.PATCH },
         { path: 'house/:id/residency', method: RequestMethod.POST },
+        { path: 'house/admin/register', method: RequestMethod.POST },
+        { path: 'house/admin/prune', method: RequestMethod.POST },
       );
   }
 }

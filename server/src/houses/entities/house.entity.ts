@@ -32,6 +32,9 @@ export class House {
   @Length(4, 16)
   name: string;
 
+  @Column()
+  updatedAt: Date;
+
   @JoinTable()
   @OneToMany((type) => Residency, (residency) => residency.house)
   residences: Residency[];
