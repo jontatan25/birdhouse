@@ -31,10 +31,6 @@ export class HousesService {
     id: string,
     includeAllInfo: boolean = false,
   ): Promise<any> {
-    if (!isUUID(id)) {
-      throw new BadRequestException('Invalid id format');
-    }
-
     const house = await this.houseRepository.findOne({
       where: { id: id },
       relations: ['residences'],
@@ -46,8 +42,8 @@ export class HousesService {
     if (includeAllInfo) {
       return plainToClass(House, house); // transform to plain object without circular references
     } else {
-      const { birds, eggs, longitude, latitude, name } = house;
-      return { birds, eggs, longitude, latitude, name };
+      const { birds, eggs, longitude, latitude, name, residences } = house;
+      return { birds, eggs, longitude, latitude, name, residences };
     }
   }
 
@@ -83,42 +79,34 @@ export class HousesService {
   }
 
   async updateHouse(id: string, updateHouseDto: UpdateHouseDto): Promise<any> {
-    if (!isUUID(id)) {
-      throw new BadRequestException('Invalid id format');
+    //creating new entity based on the object passed
+    const house = await this.houseRepository.preload({
+      id: id,
+      ...updateHouseDto,
+    });
+
+    if (!house) {
+      throw new NotFoundException(`house # ${id} not found`);
     }
 
-    try {
-      //creating new entity based on the object passed
-      const house = await this.houseRepository.preload({
-        id: id,
-        ...updateHouseDto,
-      });
+    const updateTime = new Date();
+    const updatedHouse = await this.houseRepository.save(house);
 
-      if (!house) {
-        throw new NotFoundException(`house # ${id} not found`);
-      }
+    const res = {
+      birds: updatedHouse.birds,
+      eggs: updatedHouse.eggs,
+      longitude: updatedHouse.longitude,
+      latitude: updatedHouse.latitude,
+      name: updatedHouse.name,
+      updatedAt: updateTime,
+    };
 
-      const updateTime = new Date();
-      const updatedHouse = await this.houseRepository.save(house);
+    // log the update event in the API
+    console.log(`EVENT: House Updated.`);
+    console.log(`UBID: ${updatedHouse.ubid}`);
+    console.table([res]);
 
-      const res = {
-        birds: updatedHouse.birds,
-        eggs: updatedHouse.eggs,
-        longitude: updatedHouse.longitude,
-        latitude: updatedHouse.latitude,
-        name: updatedHouse.name,
-        updatedAt: updateTime,
-      };
-
-      // log the update event in the API
-      console.log(`EVENT: House Updated.`);
-      console.log(`UBID: ${updatedHouse.ubid}`);
-      console.table([res]);
-
-      return res;
-    } catch (error) {
-      console.log(error);
-    }
+    return res;
   }
 
   async updateResidency(
@@ -178,11 +166,8 @@ export class HousesService {
       where: { ubid: ubid },
       relations: ['residences'],
     });
-    if (!house) {
-      return house;
-    } else {
-      return true;
-    }
+
+    return house;
   }
 
   async registerHouseByUbid(ubids: string[]): Promise<House[]> {
@@ -192,7 +177,7 @@ export class HousesService {
       if (!isUUID(ubid)) {
         throw new BadRequestException('Invalid id format');
       }
-      //test for duplicate houses
+      //check for duplicate houses
       const existingHouse = await this.getHouseByUbid(ubid);
       if (existingHouse) {
         houses.push(existingHouse);

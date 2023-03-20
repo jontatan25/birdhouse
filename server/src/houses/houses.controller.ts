@@ -8,6 +8,7 @@ import {
   Res,
   NotFoundException,
   BadRequestException,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { HousesService } from 'src/houses/houses.service';
 import { CreateHouseDto } from './dto/create-house.dto';
@@ -25,35 +26,62 @@ export class HousesController {
   }
 
   @Post()
-  registerNewBirdhouse(@Body() createHouseDto: CreateHouseDto) {
-    return this.housesService.registerNewHouse(createHouseDto);
-    // return res.status(201).json(registerResult);
+  async registerNewBirdhouse(
+    @Body() createHouseDto: CreateHouseDto,
+    @Res() res,
+  ) {
+    try {
+      const result = this.housesService.registerNewHouse(createHouseDto);
+      return res.status(200).json(result);
+    } catch (error) {
+      return res.status(500).json({ message: 'Failed to register BirdHouse' });
+    }
   }
 
   @Patch(':id')
-  updateHouse(@Param('id') id: string, @Body() updateHouseDto: UpdateHouseDto) {
-    return this.housesService.updateHouse(id, updateHouseDto);
-    // return res.status(201).json(updateHouseResult);
-  }
-  //PENDING UNTIL RESIDENCY IS CREATED
-  @Post(':id/residency')
-  updateResidency(
-    @Param('id') id: string,
-    @Body() updateResidencyDto: UpdateResidencyDto,
+  async updateHouse(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() updateHouseDto: UpdateHouseDto,
+    @Res() res,
   ) {
-    return this.housesService.updateResidency(id, updateResidencyDto);
+    try {
+      const result = await this.housesService.updateHouse(id, updateHouseDto);
+      return res.status(200).json(result);
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        return res.status(404).json({ message: error.message });
+      } else if (error) {
+        return res.status(400).json({ message: error.message });
+      }
+    }
+  }
+
+  @Post(':id/residency')
+  async updateResidency(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() updateResidencyDto: UpdateResidencyDto,
+    @Res() res,
+  ) {
+    try {
+      const result = await this.housesService.updateResidency(id, updateResidencyDto);
+      return res.status(200).json(result);
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        return res.status(404).json({ message: error.message });
+      } else if (error) {
+      return res.status(500).json({ message: 'Failed to update ResidencyDTO' });
+    }
+    }
   }
 
   @Get(':id')
-  async getHouse(@Param('id') id: string, @Res() res) {
+  async getHouse(@Param('id', new ParseUUIDPipe()) id: string, @Res() res) {
     try {
       const house = await this.housesService.getHouseById(id);
       return res.status(200).json(house);
     } catch (error) {
       if (error instanceof NotFoundException) {
         return res.status(404).json({ message: error.message });
-      } else if (error instanceof BadRequestException) {
-        return res.status(400).json({ message: error.message });
       } else if (error) {
         return res.status(400).json({ message: error.message });
       }
@@ -61,7 +89,10 @@ export class HousesController {
   }
 
   @Post('admin/register')
-  async registerHousesByUbid(@Body() body: { ubids: string[] },@Res() res): Promise<House[]> {
+  async registerHousesByUbid(
+    @Body() body: { ubids: string[] },
+    @Res() res,
+  ): Promise<House[]> {
     try {
       const houses = await this.housesService.registerHouseByUbid(body.ubids);
       return res.status(201).json({
@@ -74,13 +105,12 @@ export class HousesController {
   }
 
   @Post('admin/prune')
-async pruneHouses(@Res() res): Promise<Response> {
-  try {
-    const result = await this.housesService.pruneHouses();
-    return res.status(200).json(result);
-  } catch (error) {
-    return res.status(500).json({ message: 'Failed to prune houses' });
+  async pruneHouses(@Res() res): Promise<Response> {
+    try {
+      const result = await this.housesService.pruneHouses();
+      return res.status(200).json(result);
+    } catch (error) {
+      return res.status(500).json({ message: 'Failed to prune houses' });
+    }
   }
-}
-
 }
