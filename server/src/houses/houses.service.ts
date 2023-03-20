@@ -132,6 +132,10 @@ export class HousesService {
 
     house.residences.push(newResidency);
 
+    //updating house values
+    house.birds = residencyDto.birds;
+    house.eggs = residencyDto.eggs;
+
     try {
       await this.residencyRepository.save(newResidency);
       const updatedHouse = await this.houseRepository.save(house);
@@ -193,6 +197,10 @@ export class HousesService {
         house.longitude = 0;
         house.latitude = 0;
         house.name = 'new House';
+
+        // log the update event in the API
+        console.log('EVENT: House Created.');
+        console.log(`UBID: ${house.ubid}`);
 
         houses.push(await this.houseRepository.save(house));
       }
