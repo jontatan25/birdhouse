@@ -3,7 +3,7 @@ import { Request, Response, NextFunction } from 'express';
 import { HousesService } from '../houses.service';
 
 @Injectable()
-export class ubidMiddleware implements NestMiddleware {
+export class UbidMiddleware implements NestMiddleware {
   constructor(private readonly houseService: HousesService) {}
 
   async use(req: Request, res: Response, next: NextFunction) {

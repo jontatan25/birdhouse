@@ -5,7 +5,8 @@ import { House } from './entities/house.entity';
 import { Residency } from './entities/residency.entity';
 import { HousesController } from './houses.controller';
 import { HousesService } from './houses.service';
-import { ubidMiddleware } from './middleware/ubid.middleware';
+import { AuthMiddleware } from './middleware/auth.middleware';
+import { UbidMiddleware } from './middleware/ubid.middleware';
 
 @Module({
   imports: [TypeOrmModule.forFeature([House, Residency])],
@@ -15,10 +16,18 @@ import { ubidMiddleware } from './middleware/ubid.middleware';
 export class HousesModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
-      .apply(ubidMiddleware)
+      .apply(UbidMiddleware)
       .forRoutes(
+        { path: 'house', method: RequestMethod.POST },
         { path: 'house/:id', method: RequestMethod.PATCH },
         { path: 'house/:id/residency', method: RequestMethod.POST },
+        { path: 'house/admin/register', method: RequestMethod.POST },
+        { path: 'house/admin/prune', method: RequestMethod.POST },
+      );
+
+    consumer
+      .apply(AuthMiddleware)
+      .forRoutes(
         { path: 'house/admin/register', method: RequestMethod.POST },
         { path: 'house/admin/prune', method: RequestMethod.POST },
       );
