@@ -67,6 +67,12 @@ export class HousesService {
     };
     //creating instance of createHouseDto
     const house = this.houseRepository.create(newBirdhouse);
+
+    // log the update event in the API
+    console.log('EVENT: House Created.');
+    console.log(`UBID: ${newBirdhouse.ubid}`);
+    console.table([newBirdhouse]);
+
     return this.houseRepository.save(house);
   }
 
@@ -97,7 +103,9 @@ export class HousesService {
 
       // log the update event in the API
       console.log(`EVENT: House Updated.`);
-      console.log(res);
+      console.log(`UBID: ${updatedHouse.ubid}`);
+      console.table([res]);
+
       return res;
     } catch (error) {
       console.log(error);
@@ -136,8 +144,10 @@ export class HousesService {
       };
 
       // log the update event in the API
-      console.log(`EVENT: Residency Updated.`);
-      console.log(res);
+      console.log('EVENT: Residency Updated.');
+      console.log(`UBID: ${updatedHouse.ubid}`);
+      console.table([res]);
+
       return res;
     } catch (err) {
       console.log(err);
@@ -182,8 +192,8 @@ export class HousesService {
         house.birds = 0;
         house.longitude = 0;
         house.latitude = 0;
-        house.name = "new House"
-        
+        house.name = 'new House';
+
         houses.push(await this.houseRepository.save(house));
       }
     }
