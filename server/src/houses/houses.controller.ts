@@ -31,7 +31,7 @@ export class HousesController {
     @Res() res,
   ) {
     try {
-      const result = this.housesService.registerNewHouse(createHouseDto);
+      const result = await this.housesService.registerNewHouse(createHouseDto);
       return res.status(200).json(result);
     } catch (error) {
       return res.status(500).json({ message: 'Failed to register BirdHouse' });
