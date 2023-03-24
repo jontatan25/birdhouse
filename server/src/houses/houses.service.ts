@@ -61,7 +61,7 @@ export class HousesService {
 
     const creationTime = new Date();
 
-    // TO CREATE A HOUSE OLDER THAN ONE YEAR
+    // UNCOMMENT AND SET AS 'updatedAt' in newBirdhouse TO CREATE A HOUSE OLDER THAN ONE YEAR.
     // const oneYearOneDayAgo = new Date(Date.now() - 366 * 24 * 60 * 60 * 1000);
 
     const newBirdhouse = {
@@ -160,6 +160,9 @@ export class HousesService {
       const houseDto = plainToClass(UpdateResidencyResponseDto, updatedHouse);
 
       //printing table for visual purposes.- will not be stored in log
+      if (updatedHouse.residences) {
+        delete updatedHouse.residences;
+      }
       console.table([updatedHouse]);
 
       return houseDto;
@@ -213,7 +216,7 @@ export class HousesService {
 
         try {
           const createdHouse = await this.houseRepository.save(house);
-          createdHouses++
+          createdHouses++;
           // log the update event in the API
           this.logger.log(`EVENT: House Created. UBID: ${house.ubid}`);
           houses.push(createdHouse);
@@ -223,7 +226,9 @@ export class HousesService {
         }
       }
     }
-    this.logger.log(`EVENT: ${createdHouses}/${houses.length} houses added in bulk By an Admin`);
+    this.logger.log(
+      `EVENT: ${createdHouses}/${houses.length} houses added in bulk By an Admin`,
+    );
     return houses;
   }
 

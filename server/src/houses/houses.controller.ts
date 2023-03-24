@@ -7,11 +7,9 @@ import {
   Get,
   Res,
   NotFoundException,
-  BadRequestException,
   ParseUUIDPipe,
 } from '@nestjs/common';
 import { HousesService } from 'src/houses/houses.service';
-import { HouseLogger } from 'src/logger/house-logger.service';
 import { CreateHouseDto } from './dto/create-house.dto';
 import { UpdateHouseDto } from './dto/update-house.dto';
 import { UpdateResidencyDto } from './dto/update-residency.dto';
@@ -19,10 +17,7 @@ import { House } from './entities/house.entity';
 
 @Controller('houses')
 export class HousesController {
-  constructor(
-    private readonly housesService: HousesService,
-    // private readonly logger: HouseLogger,
-  ) {}
+  constructor(private readonly housesService: HousesService) {}
 
   @Get()
   findAll() {
