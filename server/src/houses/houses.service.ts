@@ -13,6 +13,10 @@ import { Repository } from 'typeorm';
 import { isUUID } from 'class-validator';
 import { Residency } from './entities/residency.entity';
 import { plainToClass } from 'class-transformer';
+import { HouseLogger } from 'src/logger/house-logger.service';
+import { CreateHouseResponseDto } from './dto/create-house-response.dto';
+import { UpdateHouseResponseDto } from './dto/update-house-response.dto';
+import { UpdateResidencyResponseDto } from './dto/update-residency-response.dto';
 
 @Injectable()
 export class HousesService {
@@ -21,6 +25,7 @@ export class HousesService {
     private readonly houseRepository: Repository<House>,
     @InjectRepository(Residency)
     private readonly residencyRepository: Repository<Residency>,
+    private readonly logger: HouseLogger,
   ) {}
 
   async findAll(): Promise<House[]> {
@@ -47,7 +52,9 @@ export class HousesService {
     }
   }
 
-  registerNewHouse(createHouseDto: CreateHouseDto): Promise<House> {
+  async registerNewHouse(
+    createHouseDto: CreateHouseDto,
+  ): Promise<CreateHouseResponseDto> {
     const { longitude, latitude, name } = createHouseDto;
     const id = uuidv4();
     const ubid = uuidv4();
@@ -70,15 +77,29 @@ export class HousesService {
     //creating instance of createHouseDto
     const house = this.houseRepository.create(newBirdhouse);
 
-    // log the update event in the API
-    console.log('EVENT: House Created.');
-    console.log(`UBID: ${newBirdhouse.ubid}`);
-    console.table([newBirdhouse]);
+    const savedhouse = this.houseRepository
+      .save(house)
+      .then((savedHouse: House) => {
+        // log the update event in the API
+        this.logger.log(`EVENT: House Created. UBID: ${newBirdhouse.ubid}`);
+        //printing table for visual purposes.- will not be stored in log
+        console.table([savedHouse]);
+        // Transforming the saved house into a CreateHouseResponseDto
+        const houseDto = plainToClass(CreateHouseResponseDto, savedHouse);
+        return houseDto;
+      })
+      .catch((err: Error) => {
+        this.logger.error(err.message, err.stack);
+        throw err;
+      });
 
-    return this.houseRepository.save(house);
+    return savedhouse;
   }
 
-  async updateHouse(id: string, updateHouseDto: UpdateHouseDto): Promise<any> {
+  async updateHouse(
+    id: string,
+    updateHouseDto: UpdateHouseDto,
+  ): Promise<UpdateHouseDto> {
     //creating new entity based on the object passed
     const house = await this.houseRepository.preload({
       id: id,
@@ -89,36 +110,30 @@ export class HousesService {
       throw new NotFoundException(`house # ${id} not found`);
     }
 
-    const updateTime = new Date();
-    const updatedHouse = await this.houseRepository.save(house);
+    house.updatedAt = new Date();
 
-    const res = {
-      birds: updatedHouse.birds,
-      eggs: updatedHouse.eggs,
-      longitude: updatedHouse.longitude,
-      latitude: updatedHouse.latitude,
-      name: updatedHouse.name,
-      updatedAt: updateTime,
-    };
+    const updatedHouse = await this.houseRepository
+      .save(house)
+      .then((updatedHouse: House) => {
+        // log the update event in the API
+        this.logger.log(`EVENT: House Updated. UBID: ${updatedHouse.ubid}`);
+        //printing table for visual purposes.- will not be stored in log
+        console.table([updatedHouse]);
+        const houseDto = plainToClass(UpdateHouseResponseDto, updatedHouse);
+        return houseDto;
+      })
+      .catch((err: Error) => {
+        this.logger.error(err.message, err.stack);
+        throw err;
+      });
 
-    // log the update event in the API
-    console.log(`EVENT: House Updated.`);
-    console.log(`UBID: ${updatedHouse.ubid}`);
-    console.table([res]);
-
-    return res;
+    return updatedHouse;
   }
 
   async updateResidency(
     id: string,
     residencyDto: UpdateResidencyDto,
-  ): Promise<{
-    birds: number;
-    eggs: number;
-    longitude: number;
-    latitude: number;
-    name: string;
-  }> {
+  ): Promise<UpdateResidencyResponseDto> {
     const house = await this.getHouseById(id, true);
 
     const newResidency = new Residency();
@@ -138,26 +153,23 @@ export class HousesService {
     try {
       await this.residencyRepository.save(newResidency);
       const updatedHouse = await this.houseRepository.save(house);
-      const res = {
-        birds: updatedHouse.birds,
-        eggs: updatedHouse.eggs,
-        longitude: updatedHouse.longitude,
-        latitude: updatedHouse.latitude,
-        name: updatedHouse.name,
-      };
 
       // log the update event in the API
-      console.log('EVENT: Residency Updated.');
-      console.log(`UBID: ${updatedHouse.ubid}`);
-      console.table([res]);
+      this.logger.log(`EVENT: Residency Updated. UBID: ${updatedHouse.ubid}`);
 
-      return res;
-    } catch (err) {
-      console.log(err);
+      const houseDto = plainToClass(UpdateResidencyResponseDto, updatedHouse);
+
+      //printing table for visual purposes.- will not be stored in log
+      console.table([updatedHouse]);
+
+      return houseDto;
+    } catch (error) {
+      this.logger.error(error, error.stack);
+      throw error;
     }
   }
 
-  async getHouseByUbid(ubid: string): Promise<any> {
+  async getHouseByUbid(ubid: string): Promise<House> {
     if (!isUUID(ubid)) {
       throw new BadRequestException('Invalid id format');
     }
@@ -172,6 +184,7 @@ export class HousesService {
 
   async registerHouseByUbid(ubids: string[]): Promise<House[]> {
     const houses: House[] = [];
+    let createdHouses = 0;
 
     for (const ubid of ubids) {
       if (!isUUID(ubid)) {
@@ -181,6 +194,9 @@ export class HousesService {
       const existingHouse = await this.getHouseByUbid(ubid);
       if (existingHouse) {
         houses.push(existingHouse);
+        this.logger.log(
+          `EVENT: House Is already the registered. UBID: ${existingHouse.ubid}`,
+        );
       } else {
         const house = new House();
         const id = uuidv4();
@@ -195,14 +211,19 @@ export class HousesService {
         house.name = 'new House';
         house.updatedAt = new Date();
 
-        // log the update event in the API
-        console.log('EVENT: House Created.');
-        console.log(`UBID: ${house.ubid}`);
-
-        houses.push(await this.houseRepository.save(house));
+        try {
+          const createdHouse = await this.houseRepository.save(house);
+          createdHouses++
+          // log the update event in the API
+          this.logger.log(`EVENT: House Created. UBID: ${house.ubid}`);
+          houses.push(createdHouse);
+        } catch (error) {
+          this.logger.error(error, error.stack);
+          throw error;
+        }
       }
     }
-
+    this.logger.log(`EVENT: ${createdHouses}/${houses.length} houses added in bulk By an Admin`);
     return houses;
   }
 
@@ -221,13 +242,9 @@ export class HousesService {
       await this.houseRepository.remove(house);
     }
 
-    console.log(`Pruned ${oldHouses.length} houses.`);
+    this.logger.log(`Pruned ${oldHouses.length} houses.`);
+    //printing table for visual purposes.- will not be stored in log
     console.table(oldHouses);
     return { message: `Pruned ${oldHouses.length} houses.` };
   }
-
-  // async remove(id: string) {
-  //   const coffee = await this.getHouseById(id);
-  //   return this.houseRepository.remove(coffee);
-  // }
 }

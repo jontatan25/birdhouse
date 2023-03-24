@@ -11,14 +11,18 @@ import {
   ParseUUIDPipe,
 } from '@nestjs/common';
 import { HousesService } from 'src/houses/houses.service';
+import { HouseLogger } from 'src/logger/house-logger.service';
 import { CreateHouseDto } from './dto/create-house.dto';
 import { UpdateHouseDto } from './dto/update-house.dto';
 import { UpdateResidencyDto } from './dto/update-residency.dto';
 import { House } from './entities/house.entity';
 
-@Controller('house')
+@Controller('houses')
 export class HousesController {
-  constructor(private readonly housesService: HousesService) {}
+  constructor(
+    private readonly housesService: HousesService,
+    // private readonly logger: HouseLogger,
+  ) {}
 
   @Get()
   findAll() {
@@ -63,14 +67,19 @@ export class HousesController {
     @Res() res,
   ) {
     try {
-      const result = await this.housesService.updateResidency(id, updateResidencyDto);
+      const result = await this.housesService.updateResidency(
+        id,
+        updateResidencyDto,
+      );
       return res.status(200).json(result);
     } catch (error) {
       if (error instanceof NotFoundException) {
         return res.status(404).json({ message: error.message });
       } else if (error) {
-      return res.status(500).json({ message: 'Failed to update ResidencyDTO' });
-    }
+        return res
+          .status(500)
+          .json({ message: 'Failed to update ResidencyDTO' });
+      }
     }
   }
 
