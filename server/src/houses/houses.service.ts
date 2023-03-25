@@ -58,7 +58,6 @@ export class HousesService {
     const { longitude, latitude, name } = createHouseDto;
     const id = uuidv4();
     const ubid = uuidv4();
-
     const creationTime = new Date();
 
     // UNCOMMENT AND SET AS 'updatedAt' in newBirdhouse TO CREATE A HOUSE OLDER THAN ONE YEAR.

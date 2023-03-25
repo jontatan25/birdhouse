@@ -20,6 +20,7 @@ export class HousesModule implements NestModule {
     consumer
       .apply(UbidMiddleware)
       .forRoutes(
+        { path: 'houses', method: RequestMethod.POST },
         { path: 'houses/:id', method: RequestMethod.PATCH },
         { path: 'houses/:id/residency', method: RequestMethod.POST },
       );

@@ -12,9 +12,10 @@ export class UbidMiddleware implements NestMiddleware {
       return res.status(401).send('X-UBID header is missing');
     }
 
-    const house = await this.houseService.getHouseByUbid(ubidHeader);
-    // if ubidheader is required in service
-    // req['authorizedUBID'] = house ? ubidHeader : null;
+    const isSoldHouse = await this.houseService.getHouseByUbid(ubidHeader);
+    if (!isSoldHouse) {
+      return res.status(401).send('X-UBID not valid');
+    }
 
     next();
   }
