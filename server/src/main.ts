@@ -1,5 +1,7 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { DocumentBuilder } from '@nestjs/swagger';
+import { SwaggerModule } from '@nestjs/swagger/dist';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
@@ -14,6 +16,17 @@ async function bootstrap() {
       transform: true,
     }),
   );
+
+  const config = new DocumentBuilder()
+    .setTitle('Shockbyte BirdHouse Server')
+    .setDescription('An API for managing birdhouses and their residencies')
+    .setVersion('1.0')
+    .addTag('Shockbyte, birdhouses, residencies')
+    .build();
+
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('api', app, document);
+
   await app.listen(3000);
 }
 bootstrap();
